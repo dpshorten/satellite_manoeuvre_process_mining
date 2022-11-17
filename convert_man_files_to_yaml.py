@@ -84,6 +84,7 @@ satcat_number = [
 first_dates = []
 last_dates = []
 lengths = []
+all_manoeuvres = []
 for i in range(len(input_file_names)):
 
     print(input_file_names[i], end=" & ")
@@ -115,8 +116,11 @@ for i in range(len(input_file_names)):
                                                            minutes=int(df_manoeuvre_history.iloc[j, 4]),
                                                            ))
 
-    print(first_date.strftime('%Y-%m-%d'), end=" & ")
-    print(last_date.strftime('%Y-%m-%d'), end=" & ")
+    all_manoeuvres.append(manoeuvre_timestamps)
+
+    #print(first_date.strftime('%Y-%m-%d'), end=" & ")
+    #print(last_date.strftime('%Y-%m-%d'), end=" & ")
+    print(len(manoeuvre_timestamps), end=" & ")
     print()
     first_dates.append(first_date)
     last_dates.append(last_date)
@@ -135,13 +139,17 @@ plt.gcf().subplots_adjust(left=0.15)
 satellite_names = list(reversed(satellite_names))
 lengths = list(reversed(lengths))
 first_dates = list(reversed(first_dates))
-ax.barh(satellite_names, lengths, left=first_dates, height=0.5)
+ax.barh(satellite_names, lengths, left=first_dates, height=0.5, color='b', alpha = 0.5)
+all_manoeuvres.reverse()
+ax.eventplot(all_manoeuvres, color='r', linelengths=0.5, linewidths=1, alpha=0.75)
 ax.set_xlim([datetime.datetime(year=1992, month=1, day=1), datetime.datetime(year=2023, month=1, day=1)])
 ax.set_xticks([
     datetime.datetime(year=1992, month=1, day=1),
-    datetime.datetime(year=1999, month=1, day=1),
-    datetime.datetime(year=2006, month=1, day=1),
-    datetime.datetime(year=2013, month=1, day=1),
+    datetime.datetime(year=1997, month=1, day=1),
+    datetime.datetime(year=2002, month=1, day=1),
+    datetime.datetime(year=2007, month=1, day=1),
+    datetime.datetime(year=2012, month=1, day=1),
+    datetime.datetime(year=2017, month=1, day=1),
     datetime.datetime(year=2022, month=1, day=1),
 ])
 ax.xaxis.set_major_formatter(DateFormatter("%Y"))

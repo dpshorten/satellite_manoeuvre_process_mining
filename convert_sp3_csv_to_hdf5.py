@@ -1,22 +1,21 @@
 import pandas as pd
 import datetime
-import yaml
-from yaml import CDumper as Dumper
+import h5py
 
-RAW_DATA_DIR = "sp3_csv_files/"
+RAW_DATA_DIR = "DORIS_beacon_positions/"
 OUTPUT_DATA_DIR = "processed_files/"
 MAX_NUM_COLS = 100
 
 output_file_names = [
-    "DORIS_beacons_Sentinel-3A.yaml",
-    "DORIS_beacons_Sentinel-3B.yaml",
-    "DORIS_beacons_Sentinel-6A.yaml",
-    "DORIS_beacons_Jason-1.yaml",
-    "DORIS_beacons_Jason-2.yaml",
-    "DORIS_beacons_Jason-3.yaml",
-    "DORIS_beacons_SARAL.yaml",
-    "DORIS_beacons_CryoSat-2.yaml",
-    "DORIS_beacons_Haiyang-2A.yaml",
+    "DORIS_beacons_Sentinel-3A.h5",
+    "DORIS_beacons_Sentinel-3B.h5",
+    "DORIS_beacons_Sentinel-6A.h5",
+    "DORIS_beacons_Jason-1.h5",
+    "DORIS_beacons_Jason-2.h5",
+    "DORIS_beacons_Jason-3.h5",
+    "DORIS_beacons_SARAL.h5",
+    "DORIS_beacons_CryoSat-2.h5",
+    "DORIS_beacons_Haiyang-2A.h5",
 ]
 
 input_file_names = [
@@ -27,7 +26,7 @@ input_file_names = [
     "ja2.csv",
     "ja3.csv",
     "saral.csv",
-    "cs2.csv",
+    "DORIS-beacons_CryoSat2.csv",
     "h2a.csv",
 ]
 
@@ -43,33 +42,23 @@ satellite_names = [
     "Haiyang-2A",
 ]
 
+keys = [
+    "timestamp",
+    "semi-major axis",
+    "eccentricity",
+    "inclination",
+    "LoAN",
+    "AoP",
+    "mean anomaly",
+]
+
 for i in range(len(input_file_names)):
 
-    print(input_file_names[i], end=" & ")
+    print(input_file_names[i])
 
     df_sp3 = pd.read_csv(RAW_DATA_DIR + input_file_names[i],
                          header=0,
-                         parse_dates = ["timestamp"],
                          low_memory=False)
 
-    print("read")
-    f = open(OUTPUT_DATA_DIR + output_file_names[i], 'w')
-    yaml.dump({"name" : satellite_names[i]}, f)
-    yaml.dump({"timestamps": df_sp3["timestamp"].values.astype('datetime64[us]').tolist()}, f, Dumper=Dumper)
-    print("timestamps done")
-    yaml.dump({"semi-major axis": df_sp3["semi-major axis"].values.tolist()}, f, Dumper=Dumper)
-    print("a done")
-    yaml.dump({"eccentricity": df_sp3["eccentricity"].values.tolist()}, f, Dumper=Dumper)
-    print("ecc done")
-    yaml.dump({"inclination": df_sp3["inclination"].values.tolist()}, f, Dumper=Dumper)
-    print("inc done")
-    yaml.dump({"LoAN": df_sp3["LoAN"].values.tolist()}, f, Dumper=Dumper)
-    print("LoAN done")
-    yaml.dump({"AoP": df_sp3["AoP"].values.tolist()}, f, Dumper=Dumper)
-    print("AoP done")
-    yaml.dump({"mean anomaly": df_sp3["mean anomaly"].values.tolist()}, f, Dumper=Dumper)
-    print("MA done")
-
-    f.close()
-
-    del df_sp3
+    store = pd.HDFStore(OUTPUT_DATA_DIR + output_file_names[i])
+    store.put("DORIS_beacon_elements", df_sp3, format='table')

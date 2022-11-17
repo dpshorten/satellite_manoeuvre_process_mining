@@ -3,7 +3,7 @@ import datetime
 import yaml
 from yaml import CDumper as Dumper
 
-RAW_DATA_DIR = "sp3_csv_files/"
+RAW_DATA_DIR = "DORIS_beacon_positions/"
 OUTPUT_DATA_DIR = "processed_files/"
 MAX_NUM_COLS = 100
 
@@ -27,7 +27,7 @@ input_file_names = [
     "ja2.csv",
     "ja3.csv",
     "saral.csv",
-    "cs2.csv",
+    "DORIS-beacons_CryoSat2.csv",
     "h2a.csv",
 ]
 
