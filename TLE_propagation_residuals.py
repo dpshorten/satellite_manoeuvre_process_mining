@@ -65,12 +65,11 @@ Y_LIMS = [
 
 params = TLE_Lifetime_Analysis_Parameters()
 f = open(params.manoeuver_files_directory + MANOEUVRES_FILE_NAME, "r")
-list_of_manoeuvre_datetimes = yaml.safe_load(f)["manoeuvre_timestamps"]
-series_manoeuvre_time_stamps = pd.Series(list_of_manoeuvre_datetimes)
+series_manoeuvre_time_stamps = pd.Series(yaml.safe_load(f)["manoeuvre_timestamps"])
 
 def calc_residuals_for_propagation_distance(propagation_distance):
     list_of_skyfield_earth_satellites = skyfield_load.tle_file(params.TLE_files_directory + TLE_FILE_NAME, reload=False)
-    df_TLE_keplerian_elements = convert_skyfield_earthSatellites_into_dataframe_of_keplerian_elements(list_of_skyfield_earth_satellites)
+    df_TLE_keplerian_elements_and_diffs = convert_skyfield_earthSatellites_into_dataframe_of_keplerian_elements(list_of_skyfield_earth_satellites)
     df_TLE_propagated_keplerian_elements = convert_skyfield_earthSatellites_into_dataframe_of_keplerian_elements(
         list_of_skyfield_earth_satellites, date_offset=propagation_distance)
     mean_x_vals = np.zeros((len(list_of_skyfield_earth_satellites), 3))
@@ -87,6 +86,7 @@ def calc_residuals_for_propagation_distance(propagation_distance):
         eci_2_ric(sat._position_and_velocity_TEME_km(sat.epoch)[0], sat._position_and_velocity_TEME_km(sat.epoch)[1])[0]
 
     mean_keplerian_elements_prop = np.zeros((len(list_of_skyfield_earth_satellites), 3))
+    # reload the satellites to undo the .at() call above
     list_of_skyfield_earth_satellites = skyfield_load.tle_file(params.TLE_files_directory + TLE_FILE_NAME, reload=False)
     for i in range(len(list_of_skyfield_earth_satellites) - propagation_distance):
         sat = list_of_skyfield_earth_satellites[i]
@@ -95,50 +95,41 @@ def calc_residuals_for_propagation_distance(propagation_distance):
         mean_keplerian_elements_prop[i + propagation_distance, 1] = sat.model.em
         mean_keplerian_elements_prop[i + propagation_distance, 2] = sat.model.im
 
-    # osculating_to_osculating_x_diff = np.zeros((len(list_of_skyfield_earth_satellites)), 3)
     osculating_to_osculating_RIC_diff = np.zeros((len(list_of_skyfield_earth_satellites), 3))
     osculating_to_osculating_kep_diff = np.zeros((len(list_of_skyfield_earth_satellites), 3))
 
     mean_to_mean_keplerian_diff = np.zeros((len(list_of_skyfield_earth_satellites), 3))
     mean_to_mean_keplerian_diff[propagation_distance:, :] = mean_keplerian_elements_prop[propagation_distance:, :] - mean_keplerian_elements[propagation_distance:, :]
 
-    for i in range(len(df_TLE_keplerian_elements) - propagation_distance):
+    for i in range(len(df_TLE_keplerian_elements_and_diffs) - propagation_distance):
         osculating_to_osculating_RIC_diff[i + propagation_distance, 0] = df_TLE_propagated_keplerian_elements["U"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["U"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["U"][i + propagation_distance]
         osculating_to_osculating_RIC_diff[i + propagation_distance, 1] = df_TLE_propagated_keplerian_elements["V"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["V"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["V"][i + propagation_distance]
         osculating_to_osculating_RIC_diff[i + propagation_distance, 2] = df_TLE_propagated_keplerian_elements["W"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["W"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["W"][i + propagation_distance]
         osculating_to_osculating_kep_diff[i + propagation_distance, 0] = df_TLE_propagated_keplerian_elements["semi-major axis"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["semi-major axis"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["semi-major axis"][i + propagation_distance]
         osculating_to_osculating_kep_diff[i + propagation_distance, 1] = df_TLE_propagated_keplerian_elements["eccentricity"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["eccentricity"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["eccentricity"][i + propagation_distance]
         osculating_to_osculating_kep_diff[i + propagation_distance, 2] = df_TLE_propagated_keplerian_elements["inclination"].iloc[i] - \
-                                                                         df_TLE_keplerian_elements["inclination"][i + propagation_distance]
+                                                                         df_TLE_keplerian_elements_and_diffs["inclination"][i + propagation_distance]
 
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[0]] = mean_to_mean_keplerian_diff[:, 0]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[1]] = mean_to_mean_keplerian_diff[:, 1]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[2]] = mean_to_mean_keplerian_diff[:, 2]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[3]] = osculating_to_osculating_RIC_diff[:, 0]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[4]] = osculating_to_osculating_RIC_diff[:, 1]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[5]] = osculating_to_osculating_RIC_diff[:, 2]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[6]] = osculating_to_osculating_kep_diff[:, 0]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[7]] = osculating_to_osculating_kep_diff[:, 1]
+    df_TLE_keplerian_elements_and_diffs[DIFF_NAMES[8]] = osculating_to_osculating_kep_diff[:, 2]
 
-
-    df_TLE_keplerian_elements["mean_sma"] = mean_keplerian_elements[:, 0]
-    df_TLE_keplerian_elements["mean_sma_prop"] = mean_keplerian_elements_prop[:, 0]
-
-    df_TLE_keplerian_elements["mean_inc"] = mean_keplerian_elements[:, 2]
-    df_TLE_keplerian_elements["mean_inc_prop"] = mean_keplerian_elements_prop[:, 2]
-
-    df_TLE_keplerian_elements[DIFF_NAMES[0]] = mean_to_mean_keplerian_diff[:, 0]
-    df_TLE_keplerian_elements[DIFF_NAMES[1]] = mean_to_mean_keplerian_diff[:, 1]
-    df_TLE_keplerian_elements[DIFF_NAMES[2]] = mean_to_mean_keplerian_diff[:, 2]
-    df_TLE_keplerian_elements[DIFF_NAMES[3]] = osculating_to_osculating_RIC_diff[:, 0]
-    df_TLE_keplerian_elements[DIFF_NAMES[4]] = osculating_to_osculating_RIC_diff[:, 1]
-    df_TLE_keplerian_elements[DIFF_NAMES[5]] = osculating_to_osculating_RIC_diff[:, 2]
-    df_TLE_keplerian_elements[DIFF_NAMES[6]] = osculating_to_osculating_kep_diff[:, 0]
-    df_TLE_keplerian_elements[DIFF_NAMES[7]] = osculating_to_osculating_kep_diff[:, 1]
-    df_TLE_keplerian_elements[DIFF_NAMES[8]] = osculating_to_osculating_kep_diff[:, 2]
-
-    return df_TLE_keplerian_elements
+    return df_TLE_keplerian_elements_and_diffs
 
 def plot_residuals(df_TLE_keplerian_elements, series_manoeuvre_time_stamps, propagation_distance, y_lims):
-    font = {'size': 20}
 
+    font = {'size': 20}
     matplotlib.rc('font', **font)
 
     for j in range(len(DIFF_NAMES)):
@@ -153,13 +144,13 @@ def plot_residuals(df_TLE_keplerian_elements, series_manoeuvre_time_stamps, prop
             plotted_series.loc[DATE_RANGE[0]:DATE_RANGE[1]],
             c="b",
             marker=".",
-            label="position difference",
             markersize=3,
             alpha=0.75,
         )
 
         series_manoeuvre_time_stamps = series_manoeuvre_time_stamps[(series_manoeuvre_time_stamps > DATE_RANGE[0]) &
                                                               (series_manoeuvre_time_stamps < DATE_RANGE[1])]
+        # set the y vals at which to plot the manoeuvre timestamps
         np_vals_at_which_to_plot_manoeuvres = np.zeros(series_manoeuvre_time_stamps.shape[0])
         for i in range(len(series_manoeuvre_time_stamps)):
             this_timestamp = series_manoeuvre_time_stamps.iloc[i]
@@ -182,9 +173,8 @@ def plot_residuals(df_TLE_keplerian_elements, series_manoeuvre_time_stamps, prop
         plt.legend()
         plt.tight_layout()
         plt.savefig(params.figs_output_directory + DIFF_NAMES[j] + "_offset" + str(propagation_distance) + ".png")
-        #print(diff_names[j])
         #plt.show()
 
 for i in range(len(PROPAGATION_DISTANCES)):
-    df_TLE_keplerian_elements = calc_residuals_for_propagation_distance(PROPAGATION_DISTANCES[i])
-    plot_residuals(df_TLE_keplerian_elements, series_manoeuvre_time_stamps, PROPAGATION_DISTANCES[i], Y_LIMS[i])
+    df_TLE_keplerian_elements_and_diffs = calc_residuals_for_propagation_distance(PROPAGATION_DISTANCES[i])
+    plot_residuals(df_TLE_keplerian_elements_and_diffs, series_manoeuvre_time_stamps, PROPAGATION_DISTANCES[i], Y_LIMS[i])
