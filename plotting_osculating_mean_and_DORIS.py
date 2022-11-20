@@ -53,7 +53,7 @@ for i in range(NUM_PLOT_TYPES):
     series_mean_SMA = df_TLE_keplerian_elements["mean SMA values"][DATE_RANGES[i][0]:DATE_RANGES[i][1]]
     series_DORIS = df_DORIS_orbit["semi-major axis"][DATE_RANGES[i][0]:DATE_RANGES[i][1]]
 
-    font = {'size' : 16}
+    font = {'size' : 18}
 
     matplotlib.rc('font', **font)
     fig = plt.figure(figsize=(15, 4))
