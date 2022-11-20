@@ -3,66 +3,48 @@ from skyfield.api import load_file, Loader, load
 import random
 import datetime
 import numpy as np
-import yaml
 import skyfield.elementslib as skyfieldEle
 import matplotlib.pyplot as plt
 import matplotlib
-import joypy
-
+from params import TLE_Lifetime_Analysis_Parameters
 
 DORIS_DATA_DIR = "DORIS_beacon_positions/"
 TLE_DATA_DIR = "processed_files/"
 
-DORIS_file_names = [
+DORIS_FILE_NAMES = [
     "DORIS-beacons_Sentinel-3A.csv",
-#    "DORIS-beacons_Sentinel-3B.csv",
-#    "DORIS-beacons_Sentinel-6A.csv",
-#    "DORIS-beacons_Jason-1.csv",
-    #"DORIS-beacons_Jason-2.csv",
-    #"DORIS-beacons_Jason-3.csv",
-    #"DORIS-beacons_SARAL.csv",
-#    "DORIS-beacons_CryoSat-2.csv",
-    #"DORIS-beacons_Haiyang-2A.csv",
+    "DORIS-beacons_Haiyang-2A.csv",
 ]
 
-TLE_file_names = [
-     "Sentinel-3A.tle",
-    # "Sentinel-3B.tle",
-    # "Sentinel-6A.tle",
-    # "Jason-1.tle",
-    # "Jason-2.tle",
-     #"Jason-3.tle",
-    # "SARAL.tle",
-    # "CryoSat-2.tle",
-     #"Haiyang-2A.tle",
+TLE_FILE_NAMES = [
+    "Sentinel-3A.tle",
+    "Haiyang-2A.tle",
 ]
 
-satellite_names = [
+SATELLITE_NAMES = [
     "Sentinel-3A",
-    # "Sentinel-3B",
-    # "Sentinel-6A",
-    # "Jason-1",
-    # "Jason-2",
-     #"Jason-3",
-    #"SARAL",
-    # "CryoSat-2",
-     #"Haiyang-2A",
+    "Haiyang-2A",
+]
+
+OUTPUT_FIG_FILE_NAMES = [
+    "propagation_error_S3A.png",
+    "propagation_error_HY2A.png",
 ]
 
 NUM_SAMPLES = 100
 DAYS_TO_SAMPLE = [0, 0.5, 1, 1.5, 2, 2.5, 5, 10, 20]
 buffer_from_end = DAYS_TO_SAMPLE * 24 * 60
 
-
 ts = load.timescale()
 
-diffs_for_sats = np.zeros((len(DORIS_file_names), NUM_SAMPLES, len(DAYS_TO_SAMPLE)))
+diffs_for_sats = np.zeros((len(DORIS_FILE_NAMES), NUM_SAMPLES, len(DAYS_TO_SAMPLE)))
+params = TLE_Lifetime_Analysis_Parameters()
 
-for i in range(len(DORIS_file_names)):
+for i in range(len(DORIS_FILE_NAMES)):
 
-    print(DORIS_file_names[i])
+    print(DORIS_FILE_NAMES[i])
 
-    df_DORIS = pd.read_csv(DORIS_DATA_DIR + DORIS_file_names[i], header=0,
+    df_DORIS = pd.read_csv(DORIS_DATA_DIR + DORIS_FILE_NAMES[i], header=0,
                            parse_dates=["timestamp"])
     df_DORIS = df_DORIS.drop_duplicates(subset = ["timestamp"])
     df_DORIS = df_DORIS.set_index("timestamp")
@@ -71,7 +53,7 @@ for i in range(len(DORIS_file_names)):
     last_DORIS_date = df_DORIS.index.values[-1]
 
     loader = Loader(TLE_DATA_DIR)
-    tle_skyfield_satellites = loader.tle_file(TLE_file_names[i])
+    tle_skyfield_satellites = loader.tle_file(TLE_FILE_NAMES[i])
 
     num_valid_samples = 0
     while num_valid_samples < NUM_SAMPLES:
@@ -112,25 +94,19 @@ for i in range(len(DORIS_file_names)):
             diffs_for_sats[i, num_valid_samples, :] = diffs
             num_valid_samples += 1
 
-
-font = {'family' : 'normal',
-        'weight' : 'normal',
-        'size'   : 16}
-
+font = {'size' : 20}
 matplotlib.rc('font', **font)
 
-fig = plt.figure(figsize=(10, 7))
-#plt.violinplot(diffs_for_sats[0, :, :])
-plt.boxplot(diffs_for_sats[0, :, :], whis=3, showfliers=False)
-#df_propagation_errors = pd.DataFrame(diffs_for_sats[0, :, :], columns=DAYS_TO_SAMPLE)
-#print(diffs_for_sats[0, :, -1])
-#fig, axs = joypy.joyplot(df_propagation_errors, range_style='own', tails=0.0, kind='normalized_counts',
- #                        colormap=matplotlib.colormaps['autumn'])
-fig.axes[0].set_xticks(list(range(1, len(DAYS_TO_SAMPLE) + 1)))
-fig.axes[0].set_xticklabels(DAYS_TO_SAMPLE)
-plt.ylabel("Absolute difference in semi-major axis (km)")
-plt.xlabel("days of propagation")
-#plt.xscale("log")
-#plt.yscale("log")
-#plt.xlim([0, 30])
-plt.show()
+for i in range(len(OUTPUT_FIG_FILE_NAMES)):
+    fig = plt.figure(figsize=(10, 7))
+    plt.boxplot(diffs_for_sats[i, :, :], whis=3, showfliers=False)
+    fig.axes[0].set_xticks(list(range(1, len(DAYS_TO_SAMPLE) + 1)))
+    fig.axes[0].set_xticklabels(DAYS_TO_SAMPLE)
+    plt.ylabel("Abs. diff. in semi-major axis (km)")
+    plt.xlabel("days of propagation")
+    #plt.xscale("log")
+    #plt.yscale("log")
+    #plt.xlim([0, 30])
+    plt.savefig(params.figs_output_directory + OUTPUT_FIG_FILE_NAMES[i])
+    #plt.show()
+    plt.clf()
