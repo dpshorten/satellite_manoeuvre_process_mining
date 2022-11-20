@@ -3,8 +3,8 @@ import datetime
 import yaml
 from yaml import CDumper as Dumper
 
-RAW_DATA_DIR = "DORIS_beacon_positions/"
-OUTPUT_DATA_DIR = "processed_files/"
+RAW_DATA_DIR = "../DORIS_beacon_positions/"
+OUTPUT_DATA_DIR = "../processed_files/"
 MAX_NUM_COLS = 100
 
 output_file_names = [

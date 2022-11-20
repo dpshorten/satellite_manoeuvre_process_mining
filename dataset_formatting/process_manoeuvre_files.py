@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-RAW_DATA_DIR = "raw_data/"
+RAW_DATA_DIR = "../raw_data/"
 MAX_NUM_COLS = 100
 BURN_COL_SPAN = 15
 BURNS_COL_START = 11

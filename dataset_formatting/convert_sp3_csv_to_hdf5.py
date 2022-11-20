@@ -2,8 +2,8 @@ import pandas as pd
 import datetime
 import h5py
 
-RAW_DATA_DIR = "DORIS_beacon_positions/"
-OUTPUT_DATA_DIR = "processed_files/"
+RAW_DATA_DIR = "../DORIS_beacon_positions/"
+OUTPUT_DATA_DIR = "../processed_files/"
 MAX_NUM_COLS = 100
 
 output_file_names = [

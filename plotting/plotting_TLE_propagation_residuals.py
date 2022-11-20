@@ -4,10 +4,11 @@ from skyfield.api import load as skyfield_load
 import matplotlib
 import datetime
 import numpy as np
+import pandas as pd
 from params import TLE_Lifetime_Analysis_Parameters
 from util import convert_skyfield_earthSatellites_into_dataframe_of_keplerian_elements
 from util import eci_2_ric
-import pandas as pd
+
 
 PROPAGATION_DISTANCES = [1, 5]
 

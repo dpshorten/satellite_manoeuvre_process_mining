@@ -5,8 +5,8 @@ import requests
 import math
 from sgp4.api import days2mdhms
 
-RAW_DATA_DIR = "raw_data/"
-OUTPUT_DATA_DIR = "processed_files/"
+RAW_DATA_DIR = "../raw_data/"
+OUTPUT_DATA_DIR = "../processed_files/"
 MAX_NUM_COLS = 100
 
 output_file_names = [
